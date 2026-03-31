@@ -3,224 +3,282 @@
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Result · Smart Datacenter Siting</title>
-  
-  <link rel="stylesheet" href="uploadstyle.css?v=99"> 
-  
+
+  <link rel="stylesheet" href="uploadstyle.css?v=99">
+
+  <style>
+    main.container.result-page {
+      max-width: 900px;
+      padding-top: 60px;
+      padding-bottom: 60px;
+    }
+
+    main.container.result-page > .card {
+      background: #FAF9F6 !important;
+      color: #0f2e21 !important;
+      padding: 40px 50px;
+      border-radius: 16px;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+      text-align: center;
+    }
+
+    .result-page .card .h2,
+    .result-page .card p {
+      color: #0f2e21 !important;
+    }
+
+    .result-page .card .h2 {
+      font-size: 2.2rem;
+      margin-bottom: 40px;
+      font-weight: 800;
+    }
+
+    .result-page .decision-confidence-group {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 30px;
+      margin-bottom: 40px;
+      flex-wrap: wrap;
+    }
+
+    .result-page span#decision {
+      font-size: 2.5rem;
+      padding: 15px 40px;
+      border-radius: 30px;
+      color: white !important;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+      min-width: 150px;
+      text-align: center;
+    }
+
+    .tag-build    { background-color: #3ea174 !important; }
+    .tag-nobuild  { background-color: #e05252 !important; }
+
+    .result-page .decision-confidence-group p {
+      font-size: 1.2rem;
+      margin: 0;
+      color: #0f2e21 !important;
+      font-weight: 600;
+    }
+
+    .result-page span#avg-ghi {
+      font-size: 1.5rem;
+      padding: 8px 16px;
+      border-radius: 20px;
+      background-color: #F5F5DC !important;
+      color: #0f2e21 !important;
+      font-weight: 700;
+    }
+
+    /* Yearly breakdown table */
+    .yearly-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0 0 40px 0;
+      text-align: left;
+    }
+    .yearly-table th {
+      background: #0f2e21;
+      color: white;
+      padding: 12px 16px;
+      font-size: 1rem;
+    }
+    .yearly-table td {
+      padding: 12px 16px;
+      border-bottom: 1px solid #ddd;
+      color: #0f2e21;
+      font-size: 1rem;
+    }
+    .yearly-table tr:last-child td { border-bottom: none; }
+    .status-above { color: #3ea174; font-weight: bold; }
+    .status-below { color: #e05252; font-weight: bold; }
+
+    /* Threshold note */
+    .threshold-note {
+      font-size: 0.95rem;
+      color: #555 !important;
+      margin-bottom: 30px !important;
+    }
+
+    /* Missing features warning */
+    .warning-box {
+      background: #fff8e1;
+      border: 1px solid #f0c040;
+      border-radius: 10px;
+      padding: 12px 16px;
+      font-size: 0.9rem;
+      color: #7a5c00 !important;
+      margin-bottom: 24px;
+      text-align: left;
+    }
+
+    .result-page .button-group {
+      margin-top: 40px;
+      justify-content: center;
+      gap: 20px;
+    }
+
+    .result-page .button-group .btn {
+      background-color: #0f2e21 !important;
+      color: #FAF9F6 !important;
+      border-color: #0f2e21 !important;
+      padding: 14px 28px;
+      font-size: 1.05rem;
+      border-radius: 25px;
+      margin: 0;
+    }
+
+    .result-page .button-group .btn:hover {
+      background-color: #3ea174 !important;
+      border-color: #3ea174 !important;
+      color: white !important;
+      transform: translateY(-2px);
+    }
+  </style>
+
   <script>
     function loadResult() {
-      const data = JSON.parse(localStorage.getItem("lastPrediction"));
-      const city = localStorage.getItem("selectedCity") || "Your City";
+      // Read from sessionStorage (set by citiesjava.js)
+      const raw = sessionStorage.getItem("result");
 
-      document.getElementById("city").textContent = city;
-
-      if (!data) {
-        document.getElementById("decision").textContent = "—";
-        document.getElementById("confidence").textContent = "—";
-        document.getElementById("reasons-heading").textContent = "No result data found.";
-        document.getElementById("reasons").innerHTML = "";
+      if (!raw) {
+        // No result — send back to cities
+        window.location.href = "cities.html";
         return;
       }
 
-      console.log("Loaded prediction data:", data);
+      const data = JSON.parse(raw);
 
-      const decision =
-        data.decision ||
-        data.result ||
-        data.recommendation ||
-        (data.prediction ? String(data.prediction).toUpperCase() : "UNKNOWN");
+      /*
+        Data shape from backend:
 
-      const confidenceValue =
-        data.confidence ??
-        data.score ??
-        data.probability ??
-        0;
+        City prediction:
+        {
+          city: "Phoenix",
+          yearly_avg: { "2025": 456.2, "2026": 461.0, "2027": 458.7 },
+          average_3_year: 458.6,
+          threshold: 409,
+          decision: "BUILD" or "DON'T BUILD"
+        }
 
-      const reasons =
-        data.reasons ||
-        data.key_factors ||
-        data.explanations ||
-        [];
+        File upload:
+        {
+          yearly_avg: { 2025: 420.1, 2026: 415.3, 2027: 418.9 },
+          average_3_year: 418.1,
+          threshold: 409,
+          decision: "BUILD" or "DON'T BUILD",
+          files_uploaded: 3,
+          months_of_data: 36,
+          missing_features: []
+        }
+      */
 
+      const isBuild = data.decision === "BUILD";
+
+      // ---- City name ----
+      document.getElementById("city").textContent = data.city
+        ? data.city.replace(/_/g, " ")
+        : "Your Upload";
+
+      // ---- Decision badge ----
       const decisionEl = document.getElementById("decision");
-      decisionEl.textContent = decision;
+      decisionEl.textContent = isBuild ? "✅ BUILD" : "❌ DON'T BUILD";
+      decisionEl.className   = "badge " + (isBuild ? "tag-build" : "tag-nobuild");
 
-      if (decision === "YES") {
-        decisionEl.className = "badge tag-yes";
-        document.getElementById("reasons-heading").textContent = "Reasons for YES:";
-      } else if (decision === "NO") {
-        decisionEl.className = "badge tag-no";
-        document.getElementById("reasons-heading").textContent = "Reasons for NO:";
-      } else {
-        decisionEl.className = "badge";
-        document.getElementById("reasons-heading").textContent = "Key Factors:";
+      // ---- 3-year average GHI ----
+      document.getElementById("avg-ghi").textContent = data.average_3_year + " W/m²";
+
+      // ---- Threshold note ----
+      document.getElementById("threshold-note").textContent =
+        `Build threshold: ${data.threshold} W/m²  ·  3-year average: ${data.average_3_year} W/m²`;
+
+      // ---- Yearly breakdown table ----
+      const tbody = document.getElementById("yearly-tbody");
+      tbody.innerHTML = "";
+
+      if (data.yearly_avg) {
+        for (const [year, ghi] of Object.entries(data.yearly_avg)) {
+          const above = ghi >= data.threshold;
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td>${year}</td>
+            <td>${ghi} W/m²</td>
+            <td class="${above ? "status-above" : "status-below"}">
+              ${above ? "▲ Above threshold" : "▼ Below threshold"}
+            </td>
+          `;
+          tbody.appendChild(row);
+        }
       }
 
-      let confidenceText = "—";
-      if (typeof confidenceValue === "number") {
-        confidenceText = confidenceValue <= 1
-          ? Math.round(confidenceValue * 100) + "%"
-          : Math.round(confidenceValue) + "%";
-      }
-      document.getElementById("confidence").textContent = confidenceText;
-
-      if (Array.isArray(reasons) && reasons.length > 0) {
-        document.getElementById("reasons").innerHTML = reasons
-          .map(reason => `<span class="badge">${reason}</span>`)
-          .join(" ");
-      } else {
-        document.getElementById("reasons").innerHTML =
-          `<span class="badge">No reasons provided</span>`;
+      // ---- Missing features warning (upload only) ----
+      const warningEl = document.getElementById("missing-warning");
+      if (data.missing_features && data.missing_features.length > 0) {
+        warningEl.textContent =
+          "⚠️ Some features were missing from your file and filled with defaults: " +
+          data.missing_features.join(", ");
+        warningEl.style.display = "block";
       }
     }
 
     window.addEventListener("DOMContentLoaded", loadResult);
   </script>
-  
-  <style>
-    main.container.result-page {
-        max-width: 900px; 
-        padding-top: 60px; 
-        padding-bottom: 60px;
-    }
 
-    main.container.result-page > .card {
-        background: #FAF9F6 !important;
-        color: #0f2e21 !important;
-        padding: 40px 50px; 
-        border-radius: 16px; 
-        box-shadow: 0 8px 25px rgba(0,0,0,0.2); 
-        text-align: center;
-    }
-
-    .result-page .card .h2,
-    .result-page .card p {
-        color: #0f2e21 !important;
-    }
-
-    .result-page .card .h2 {
-        font-size: 2.2rem; 
-        margin-bottom: 40px; 
-        font-weight: 800; 
-    }
-
-    .result-page .decision-confidence-group {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        gap: 30px; 
-        margin-bottom: 40px; 
-        flex-wrap: wrap; 
-    }
-
-    .result-page span#decision {
-        font-size: 2.5rem; 
-        padding: 15px 40px; 
-        border-radius: 30px; 
-        color: white !important;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.15); 
-        min-width: 150px; 
-        text-align: center;
-    }
-
-    .result-page .decision-confidence-group p { 
-        font-size: 1.2rem; 
-        margin: 0;
-        color: #0f2e21 !important;
-        font-weight: 600; 
-    }
-
-    .result-page span#confidence {
-        font-size: 1.5rem;
-        padding: 8px 16px;
-        border-radius: 20px;
-        background-color: #F5F5DC !important;
-        color: #0f2e21 !important;
-        font-weight: 700;
-    }
-
-    .result-page .reasons-heading {
-        margin-bottom: 15px; 
-        font-size: 1.1rem;
-        font-weight: 600;
-        color: #0a1f18 !important;
-        text-align: left;
-    }
-
-    .result-page .reasons-group {
-        display: flex;
-        justify-content: flex-start;
-        gap: 12px; 
-        flex-wrap: wrap; 
-        margin-bottom: 40px; 
-    }
-
-    .result-page .reasons-group .badge {
-        background-color: #3ea174 !important;
-        color: white !important;
-        padding: 10px 20px;
-        border-radius: 20px;
-        font-weight: normal; 
-        font-size: 1rem;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-
-    .result-page .button-group {
-        margin-top: 40px; 
-        justify-content: center;
-        gap: 20px;
-    }
-
-    .result-page .button-group .btn {
-        background-color: #0f2e21 !important;
-        color: #FAF9F6 !important;
-        border-color: #0f2e21 !important;
-        padding: 14px 28px; 
-        font-size: 1.05rem;
-        border-radius: 25px; 
-        margin: 0;
-    }
-
-    .result-page .button-group .btn:hover {
-        background-color: #3ea174 !important;
-        border-color: #3ea174 !important;
-        color: white !important;
-        transform: translateY(-2px); 
-    }
-  </style>
-  
 </head>
 <body>
- <nav class="nav">
-  <div class="nav-inner">
-    <a class="brand" href="index.html">Siting</a>
-    <div class="navlinks">
-      <a href="index.html">Home</a>
-      <a href="cities.html">Cities</a>
-      <a href="guide.html">Data Guide</a>
-      <a href="upload.html">Upload</a>
-      <a class="active" href="result.html">Result</a>
-      <a href="about.html">About</a>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="brand" href="index.html">Siting</a>
+      <div class="navlinks">
+        <a href="index.html">Home</a>
+        <a href="cities.html">Cities</a>
+        <a href="guide.html">Data Guide</a>
+        <a href="upload.html">Upload</a>
+        <a class="active" href="result.html">Result</a>
+        <a href="about.html">About</a>
+      </div>
     </div>
-  </div>
-</nav>
+  </nav>
 
   <main class="container result-page">
     <div class="card">
+
       <div class="h2">Recommendation for <span id="city">Your City</span></div>
-      
+
+      <!-- Decision + Average GHI -->
       <div class="decision-confidence-group">
         <span id="decision" class="badge">—</span>
-        <p>Confidence: <span id="confidence" class="badge">—</span></p>
+        <p>3-Year Avg GHI: <span id="avg-ghi" class="badge">—</span></p>
       </div>
 
-      <p id="reasons-heading" class="reasons-heading">Key Factors:</p>
-      
-      <div id="reasons" class="reasons-group"></div>
-      
+      <!-- Threshold note -->
+      <p id="threshold-note" class="threshold-note"></p>
+
+      <!-- Missing features warning (hidden unless upload has missing features) -->
+      <div id="missing-warning" class="warning-box" style="display:none;"></div>
+
+      <!-- Yearly GHI breakdown -->
+      <table class="yearly-table">
+        <thead>
+          <tr>
+            <th>Year</th>
+            <th>Predicted GHI</th>
+            <th>vs Threshold</th>
+          </tr>
+        </thead>
+        <tbody id="yearly-tbody">
+          <tr><td colspan="3">Loading...</td></tr>
+        </tbody>
+      </table>
+
+      <!-- Action buttons -->
       <div class="button-group">
-        <a class="btn" href="upload.html">Try another file</a>
-        <a class="btn" href="cities.html">Pick different city</a>
+        <a class="btn" href="cities.html">Try Another City</a>
+        <a class="btn" href="cities.html" onclick="sessionStorage.removeItem('result')">New Analysis</a>
       </div>
+
     </div>
   </main>
 
@@ -229,5 +287,6 @@
       <p>&copy; 2025 Smart Datacenter Siting, All rights reserved.</p>
     </div>
   </footer>
+
 </body>
 </html>
