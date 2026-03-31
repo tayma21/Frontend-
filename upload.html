@@ -2,120 +2,242 @@
 <html lang="en">
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Upload  Smart Datacenter Siting</title>
-  
+  <title>Upload · Smart Datacenter Siting</title>
+
   <link rel="stylesheet" href="uploadstyle.css">
-  
+
+  <style>
+    .error-msg {
+      color: #ff6b6b;
+      font-size: 14px;
+      margin: 10px 0 0 0;
+      min-height: 20px;
+    }
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    .analyzing-msg {
+      color: #3ea174;
+      font-size: 14px;
+      margin: 10px 0 0 0;
+      display: none;
+    }
+  </style>
+
   <script>
+    const BACKEND_URL = "https://dcai-backend.onrender.com";
+
     const REQUIRED = [
       "Temperature","Alpha","Aerosol Optical Depth","Asymmetry","Clearsky DHI",
       "Clearsky DNI","Clearsky GHI","Cloud Fill Flag","Cloud Type","Dew Point",
       "DHI","DNI","Fill Flag","GHI","Ozone","Relative Humidity",
       "Solar Zenith Angle","SSA","Surface Albedo","Pressure","Precipitable Water",
       "Wind Direction","Wind Speed"
-    ]; // must match guide
+    ];
 
-    function handleFile(ev){
+    // Check auth on page load
+    window.addEventListener("DOMContentLoaded", () => {
+      if (!localStorage.getItem("token")) {
+        window.location.href = "login.html";
+      }
+    });
+
+    // Validate schema locally when user picks a file
+    function handleFile(ev) {
       const file = ev.target.files[0];
-      const nameBox = document.getElementById('fileName');
-      const status = document.getElementById('status');
-      const preview = document.getElementById('preview');
-      preview.textContent = ''; status.textContent='';
-      if(!file){nameBox.textContent='';return;}
-      nameBox.textContent = `Selected file: ${file.name}`; // Improved text
+      const nameBox = document.getElementById("fileName");
+      const status  = document.getElementById("status");
+      const preview = document.getElementById("preview");
+
+      preview.textContent = "";
+      status.textContent  = "";
+      clearError();
+
+      if (!file) { nameBox.textContent = ""; return; }
+
+      nameBox.textContent = `Selected file: ${file.name}`;
 
       const reader = new FileReader();
       reader.onload = () => {
-        const text = reader.result || '';
-        const [firstLine,...rest] = text.split(/\r?\n/);
-        const cols = (firstLine||'').split(',').map(s=>s.trim());
+        const text = reader.result || "";
+        const [firstLine, ...rest] = text.split(/\r?\n/);
+        const cols = (firstLine || "").split(",").map(s => s.trim());
         const missing = REQUIRED.filter(c => !cols.includes(c));
-        status.innerHTML = missing.length===0
-          ? `<span class="badge tag-yes">Schema OK</span>`
-          : `<span class="badge tag-no">Missing: ${missing.join(', ')}</span>`;
-        preview.textContent = [firstLine, ...rest.slice(0,5)].join('\n');
-        localStorage.uploadOk = (missing.length===0) ? '1' : '0';
+
+        status.innerHTML = missing.length === 0
+          ? `<span class="badge tag-yes">Schema OK ✓</span>`
+          : `<span class="badge tag-no">Missing: ${missing.join(", ")}</span>`;
+
+        preview.textContent = [firstLine, ...rest.slice(0, 5)].join("\n");
       };
       reader.readAsText(file);
     }
-    function goResult(){
-      if(localStorage.uploadOk==='1'){ window.location.href='result.html'; }
-      else alert('Please fix schema issues before continuing (use the Guide�s list).');
+
+    // Send file to backend and get real prediction
+    async function runAnalysis() {
+      const fileInput = document.getElementById("file");
+      const files     = fileInput.files;
+      const token     = localStorage.getItem("token");
+      const btn       = document.getElementById("analyze-btn");
+      const analyzing = document.getElementById("analyzing-msg");
+
+      clearError();
+
+      // Auth check
+      if (!token) {
+        window.location.href = "login.html";
+        return;
+      }
+
+      // File check
+      if (!files || files.length === 0) {
+        showError("Please select a CSV file first.");
+        return;
+      }
+
+      // Loading state
+      btn.disabled          = true;
+      btn.textContent       = "Analyzing...";
+      analyzing.style.display = "block";
+
+      const formData = new FormData();
+      for (let file of files) {
+        formData.append("files", file);
+      }
+
+      try {
+        const response = await fetch(`${BACKEND_URL}/predict/upload`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`
+            // ⚠️ No Content-Type — browser sets multipart boundary automatically
+          },
+          body: formData
+        });
+
+        // Token expired
+        if (response.status === 401) {
+          localStorage.removeItem("token");
+          window.location.href = "login.html";
+          return;
+        }
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          showError(data.detail || "Upload failed. Please check your file and try again.");
+          return;
+        }
+
+        // Save result and go to result page
+        sessionStorage.setItem("result", JSON.stringify(data));
+        window.location.href = "result.html";
+
+      } catch (err) {
+        showError("Could not connect to server. Please try again.");
+      } finally {
+        btn.disabled          = false;
+        btn.textContent       = "Run Analysis →";
+        analyzing.style.display = "none";
+      }
+    }
+
+    function showError(msg) {
+      const el = document.getElementById("error-msg");
+      if (el) el.textContent = msg;
+    }
+
+    function clearError() {
+      const el = document.getElementById("error-msg");
+      if (el) el.textContent = "";
     }
   </script>
 </head>
 <body>
-<nav class="nav">
-  <div class="nav-inner">
-    <a class="brand" href="index.html">Siting</a> <div class="navlinks">
-      <a href="index.html">Home</a>
-      <a href="cities.html">Cities</a>
-      <a href="guide.html">Data Guide</a>
-      <a class="active" href="upload.html">Upload</a> <a href="result.html">Result</a>
-      <a href="about.html">About</a>
-    </div>
-  </div>
-</nav>
 
-  <div class="container upload-page"> </div>
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="brand" href="index.html">Siting</a>
+      <div class="navlinks">
+        <a href="index.html">Home</a>
+        <a href="cities.html">Cities</a>
+        <a href="guide.html">Data Guide</a>
+        <a class="active" href="upload.html">Upload</a>
+        <a href="result.html">Result</a>
+        <a href="about.html">About</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container upload-page">
     <div class="card">
       <div class="h2">Upload your CSV</div>
-     
-      
-      
-      
+
       <main class="guide-content-column">
-    
-    <div class="card">
-      <div class="h2">Required headers (must all be present):</span></div>
-      <ol class="muted">
-        
-      </ol>
-  
-      
-     <ul class="kbd-block list-columns">
-  <li>Temperature</li>
-  <li>Alpha</li>
-  <li>Aerosol Optical Depth</li>
-  <li>Asymmetry</li>
-  <li>Clearsky DHI</li>
-  <li>Clearsky DNI</li>
-  <li>Clearsky GHI</li>
-  <li>Cloud Fill Flag</li>
-  <li>Cloud Type</li>
-  <li>Dew Point</li>
-  <li>DHI</li>
-  <li>DNI</li>
-  <li>Fill Flag</li>
-  <li>GHI</li>
-  <li>Ozone</li>
-  <li>Relative Humidity</li>
-  <li>Solar Zenith Angle</li>
-  <li>SSA</li>
-  <li>Surface Albedo</li>
-  <li>Pressure</li>
-  <li>Precipitable Water</li>
-  <li>Wind Direction</li>
-  <li>Wind Speed</li>
-</ul>
+        <div class="card">
+          <div class="h2">Required headers (must all be present):</div>
 
-      <div class="file-upload-wrapper">
-        <label for="file" class="btn">Choose CSV File</label>
-        <input id="file" type="file" accept=".csv" onchange="handleFile(event)">
-      </div>
-      
-      <p id="fileName" class="muted file-name-display"></p>
-      <p id="status"></p>
+          <ul class="kbd-block list-columns">
+            <li>Temperature</li>
+            <li>Alpha</li>
+            <li>Aerosol Optical Depth</li>
+            <li>Asymmetry</li>
+            <li>Clearsky DHI</li>
+            <li>Clearsky DNI</li>
+            <li>Clearsky GHI</li>
+            <li>Cloud Fill Flag</li>
+            <li>Cloud Type</li>
+            <li>Dew Point</li>
+            <li>DHI</li>
+            <li>DNI</li>
+            <li>Fill Flag</li>
+            <li>GHI</li>
+            <li>Ozone</li>
+            <li>Relative Humidity</li>
+            <li>Solar Zenith Angle</li>
+            <li>SSA</li>
+            <li>Surface Albedo</li>
+            <li>Pressure</li>
+            <li>Precipitable Water</li>
+            <li>Wind Direction</li>
+            <li>Wind Speed</li>
+          </ul>
 
-      
+          <!-- File picker -->
+          <div class="file-upload-wrapper">
+            <label for="file" class="btn">Choose CSV File</label>
+            <!-- multiple allows uploading several yearly files at once -->
+            <input id="file" type="file" accept=".csv" multiple onchange="handleFile(event)">
+          </div>
 
-      <div class="button-group">
-        <a class="btn" href="guide.html">Back to Guide</a>
-        <button class="btn primary" onclick="goResult()">Run Analysis &rarr;</button>
-      </div>
+          <p id="fileName" class="muted file-name-display"></p>
+          <p id="status"></p>
+          <pre id="preview" class="muted" style="font-size:12px; text-align:left; overflow-x:auto;"></pre>
+
+          <!-- Error message -->
+          <p id="error-msg" class="error-msg"></p>
+
+          <!-- Analyzing message -->
+          <p id="analyzing-msg" class="analyzing-msg">
+            ⏳ Analyzing your data... this may take up to 30 seconds.
+          </p>
+
+          <div class="button-group">
+            <a class="btn" href="guide.html">Back to Guide</a>
+            <button id="analyze-btn" class="btn primary" onclick="runAnalysis()">Run Analysis →</button>
+          </div>
+
+        </div>
+      </main>
     </div>
-  </main>
+  </div>
 
-  <footer><div class="container"><p>&copy; 2025 Smart Datacenter Siting , All rights reserved.</p></div></footer>
+  <footer>
+    <div class="container">
+      <p>&copy; 2025 Smart Datacenter Siting, All rights reserved.</p>
+    </div>
+  </footer>
+
 </body>
 </html>
