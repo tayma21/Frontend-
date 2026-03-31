@@ -31,27 +31,31 @@ async function getPrediction(cityName) {
   }
 }
 
-// 1. THIS IS THE LIST THAT FILLS THE MENU
-const cities = [
-  "New York, NY", "Los Angeles, CA", "Chicago, IL", "Phoenix, AZ",
-  "Las Vegas, NV", "Denton, TX", "Billings, MT", "San Diego, CA",
-  "Kodiak, AK", "Aspen, CO", "Dodge City, KS", "San Francisco, CA",
-  "Greensburg, KS", "Honolulu, HI", "Albuquerque, NM", "San Jose, CA",
-  "Tucson, AZ", "Reno, NV", "El Paso, TX", "Salt Lake City, UT"
-];
-
-// 2. THIS FUNCTION PUTS THE CITIES INTO THE DROPDOWN
-function initPage() {
+// Load supported cities from backend
+async function initPage() {
   const dropdown = document.getElementById("city-dropdown");
-  if (dropdown) {
-    dropdown.innerHTML = '<option value="" disabled selected>Select a city...</option>';
 
-    cities.forEach(city => {
-      const option = document.createElement("option");
-      option.value = city;
-      option.textContent = city;
-      dropdown.appendChild(option);
-    });
+  if (dropdown) {
+    try {
+      const response = await fetch(`${BACKEND_URL}/cities`);
+      const data = await response.json();
+
+      console.log("Supported cities:", data);
+
+      const supportedCities = data.supported_cities || [];
+
+      dropdown.innerHTML = '<option value="" disabled selected>Select a city...</option>';
+
+      supportedCities.forEach(city => {
+        const option = document.createElement("option");
+        option.value = city;
+        option.textContent = city;
+        dropdown.appendChild(option);
+      });
+    } catch (error) {
+      console.error("Failed to load cities:", error);
+      alert("Could not load supported cities from server.");
+    }
   }
 
   // Update file name text when a user selects a file
@@ -68,7 +72,7 @@ function initPage() {
   }
 }
 
-// 3. ANALYZE PRE-TRAINED CITIES
+// Analyze pre-trained cities
 async function handleCitySelect() {
   const dropdown = document.getElementById("city-dropdown");
   const selectedCity = dropdown ? dropdown.value : "";
@@ -96,7 +100,7 @@ async function handleCitySelect() {
 
     const data = await response.json();
 
-    if (!response.ok) {
+    if (!response.ok || data.detail) {
       console.error("Server error:", data);
       alert(data.detail || "Prediction request failed.");
       return;
@@ -116,7 +120,7 @@ async function handleCitySelect() {
   }
 }
 
-// 4. ANALYZE NEW UPLOADED FILES
+// Analyze uploaded CSV files
 async function handleUploadAndAnalyze() {
   const fileInput = document.getElementById("file-input");
   const file = fileInput ? fileInput.files[0] : null;
@@ -148,7 +152,7 @@ async function handleUploadAndAnalyze() {
 
     const data = await response.json();
 
-    if (!response.ok) {
+    if (!response.ok || data.detail) {
       console.error("Upload error:", data);
       alert(data.detail || "Upload failed.");
       return;
@@ -168,5 +172,4 @@ async function handleUploadAndAnalyze() {
   }
 }
 
-// IMPORTANT: This tells the browser to run the "initPage" function as soon as the page opens
 window.addEventListener("DOMContentLoaded", initPage);
