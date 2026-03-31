@@ -1,5 +1,23 @@
 const BACKEND_URL = "https://dcai-backend.onrender.com";
 
+async function getPrediction(cityName) {
+  try {
+    const response = await fetch(`${BACKEND_URL}/predict/${encodeURIComponent(cityName)}`);
+
+    if (!response.ok) {
+      throw new Error("Request failed");
+    }
+
+    const data = await response.json();
+    console.log("Backend response:", data);
+
+    document.getElementById("result").innerText = JSON.stringify(data, null, 2);
+  } catch (error) {
+    console.error("Error:", error);
+    document.getElementById("result").innerText = "Failed to connect to backend";
+  }
+}
+
 // 1. THIS IS THE LIST THAT FILLS THE MENU
 const cities = [
     "New York, NY", "Los Angeles, CA", "Chicago, IL", "Phoenix, AZ",
