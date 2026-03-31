@@ -1,5 +1,29 @@
 const BACKEND_URL = "https://dcai-backend.onrender.com";
 
+// Pretty display names for dropdown (value stays as exact API name)
+const cityLabels = {
+  "Aspen":         "Aspen, CO",
+  "Albuquerque":   "Albuquerque, NM",
+  "Billington":    "Billington, MT",
+  "Chicago":       "Chicago, IL",
+  "Chandler":      "Chandler, AZ",
+  "Dodge_City":    "Dodge City, KS",
+  "Denton":        "Denton, TX",
+  "El_Paso":       "El Paso, TX",
+  "Greensburg":    "Greensburg, KS",
+  "Honolulu":      "Honolulu, HI",
+  "Los_Angeles":   "Los Angeles, CA",
+  "Las_Vegas":     "Las Vegas, NV",
+  "New_York_City": "New York City, NY",
+  "Phoenix":       "Phoenix, AZ",
+  "Reno":          "Reno, NV",
+  "San_Diego":     "San Diego, CA",
+  "San_Francisco": "San Francisco, CA",
+  "San_Jose":      "San Jose, CA",
+  "Salt_Lake_City":"Salt Lake City, UT",
+  "Tucson":        "Tucson, AZ"
+};
+
 // Load supported cities from backend + set up file input listener
 async function initPage() {
   // Redirect to login if no token
@@ -21,8 +45,8 @@ async function initPage() {
 
       supportedCities.forEach(city => {
         const option = document.createElement("option");
-        option.value = city;
-        option.textContent = city.replace(/_/g, " "); // "Los_Angeles" → "Los Angeles"
+        option.value = city; // exact name used for API call
+        option.textContent = cityLabels[city] || city.replace(/_/g, " "); // pretty display name
         dropdown.appendChild(option);
       });
 
@@ -49,7 +73,7 @@ async function initPage() {
 async function handleCitySelect() {
   const dropdown = document.getElementById("city-dropdown");
   const selectedCity = dropdown ? dropdown.value : "";
-  const token = localStorage.getItem("token"); // ← consistent key
+  const token = localStorage.getItem("token");
 
   clearError();
 
@@ -100,7 +124,7 @@ async function handleCitySelect() {
 async function handleUploadAndAnalyze() {
   const fileInput = document.getElementById("file-input");
   const files = fileInput ? fileInput.files : [];
-  const token = localStorage.getItem("token"); // ← consistent key
+  const token = localStorage.getItem("token");
 
   clearError();
 
