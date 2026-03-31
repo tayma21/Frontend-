@@ -35,7 +35,6 @@
   </style>
 </head>
 <body>
-
   <nav class="nav">
     <div class="nav-inner">
       <a class="brand" href="index.html">Siting</a>
@@ -50,38 +49,27 @@
       </div>
     </div>
   </nav>
-
   <main class="container">
     <div class="auth-container">
       <h2>Create Account</h2>
       <p class="muted">Join the AI-Driven Siting Platform</p>
-
       <input type="email" id="reg-email" placeholder="Email Address">
       <input type="password" id="reg-pass" placeholder="Password">
-
       <p id="error-msg" class="error-msg"></p>
-
       <button id="signup-btn" class="btn primary" style="width:100%;" onclick="handleSignup()">Sign Up</button>
-
       <p class="muted" style="margin-top: 20px;">
         Already have an account? <a href="login.html" style="color: #3ea174;">Login</a>
       </p>
     </div>
   </main>
-
   <script>
     const API_BASE = "https://dcai-backend.onrender.com";
-
     async function handleSignup() {
       const email    = document.getElementById("reg-email").value.trim();
       const password = document.getElementById("reg-pass").value;
       const errorEl  = document.getElementById("error-msg");
       const btn      = document.getElementById("signup-btn");
-
-      // Clear previous error
       errorEl.textContent = "";
-
-      // Basic validation
       if (!email || !password) {
         errorEl.textContent = "Please fill in all fields.";
         return;
@@ -90,28 +78,20 @@
         errorEl.textContent = "Password must be at least 6 characters.";
         return;
       }
-
-      // Loading state
       btn.disabled    = true;
       btn.textContent = "Creating account...";
-
       try {
         const response = await fetch(`${API_BASE}/auth/signup`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email, password })
         });
-
         const data = await response.json();
-
         if (response.ok) {
-          // Success — redirect to login
           window.location.href = "login.html";
         } else {
-          // Show exact error from backend (e.g. "Email already registered")
           errorEl.textContent = data.detail || "Error creating account. Please try again.";
         }
-
       } catch (err) {
         errorEl.textContent = "Could not connect to server. Please try again.";
       } finally {
@@ -120,6 +100,5 @@
       }
     }
   </script>
-
 </body>
 </html>
