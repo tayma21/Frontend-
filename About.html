@@ -5,12 +5,36 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>About Us Smart Datacenter Siting</title>
   
-  <!-- Make sure this points to your CSS file -->
-  <link rel="stylesheet" href="aboutstyle.css"> 
+  <link rel="stylesheet" href="aboutstyle.css">
+
+  <style>
+    .btn-logout {
+      background: transparent;
+      border: 1px solid #3ea174;
+      color: #3ea174;
+      padding: 6px 16px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+    .btn-logout:hover {
+      background: #3ea174;
+      color: white;
+    }
+  </style>
+
+  <script>
+    function logout() {
+      localStorage.removeItem("token");
+      localStorage.removeItem("result");
+      sessionStorage.removeItem("result");
+      window.location.href = "login.html";
+    }
+  </script>
 </head>
 <body>
-   <!-- NAVBAR -->
-   <nav class="nav">
+  <!-- NAVBAR -->
+  <nav class="nav">
     <div class="nav-inner">
       <a class="brand" href="index.html">Siting</a>
       <div class="navlinks">
@@ -19,8 +43,7 @@
         <a href="guide.html">Data Guide</a>
         <a href="result.html">Result</a>
         <a class="active" href="about.html">About</a>
-        <a href="login.html">Login</a>
-        
+        <button class="btn-logout" onclick="logout()">Logout</button>
       </div>
     </div>
   </nav>
@@ -31,7 +54,7 @@
       <p>Driving efficiency and sustainability in datacenter placement through intelligent data analysis.</p>
     </div>
     <div class="about-hero-overlay"></div>
-    </header>
+  </header>
 
   <main class="container about-page-content">
     <div class="card">
@@ -52,7 +75,6 @@
     </div>
 
     <div class="card team-section">
-      <!-- UPDATED TITLE -->
       <div class="h2">Project Contributors</div>
       
       <div class="team-grid">
@@ -61,28 +83,24 @@
         <div class="team-member">
           <img src="https://placehold.co/150x150/FAF9F6/0f2e21?text=Member+1" alt="Team Member 1 Photo"> 
           <h3>Tayma Efdeil</h3>
-         
         </div>
         
         <!-- Member 2 -->
         <div class="team-member">
           <img src="https://placehold.co/150x150/FAF9F6/0f2e21?text=Member+2" alt="Team Member 2 Photo">
           <h3>Najah Elnairab</h3>
-        
         </div>
         
-        <!-- Member 3 (NEW) -->
+        <!-- Member 3 -->
         <div class="team-member">
           <img src="https://placehold.co/150x150/FAF9F6/0f2e21?text=Member+3" alt="Team Member 3 Photo"> 
           <h3>Jana Amairi</h3>
-          
         </div>
         
-        <!-- Member 4 (NEW) -->
+        <!-- Member 4 -->
         <div class="team-member">
           <img src="https://placehold.co/150x150/FAF9F6/0f2e21?text=Member+4" alt="Team Member 4 Photo">
           <h3>Hiba Mohamed Ahmed</h3>
-          
         </div>
         
       </div>
@@ -90,6 +108,10 @@
     
   </main>
 
-  <footer><div class="container"><p>&copy; 2025 Smart Datacenter Siting , All rights reserved.</p></div></footer>
+  <footer>
+    <div class="container">
+      <p>&copy; 2025 Smart Datacenter Siting, All rights reserved.</p>
+    </div>
+  </footer>
 </body>
 </html>
