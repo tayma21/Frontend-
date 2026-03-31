@@ -133,7 +133,6 @@
       transform: translateY(-2px);
     }
 
-    /* Logout button in navbar */
     .btn-logout {
       background: transparent;
       border: 1px solid #3ea174;
@@ -151,45 +150,32 @@
 
   <script>
     function loadResult() {
-      // Try sessionStorage first, fall back to localStorage (survives refresh)
       let raw = sessionStorage.getItem("result");
-
+      if (!raw) raw = localStorage.getItem("result");
       if (!raw) {
-        raw = localStorage.getItem("result");
-      }
-
-      if (!raw) {
-        // No result anywhere — send back to cities
         window.location.href = "cities.html";
         return;
       }
 
       const data = JSON.parse(raw);
-
-      // Save to both so refresh always works
       sessionStorage.setItem("result", raw);
       localStorage.setItem("result", raw);
 
       const isBuild = data.decision === "BUILD";
 
-      // City name
       document.getElementById("city").textContent = data.city
         ? data.city.replace(/_/g, " ")
         : "Your Upload";
 
-      // Decision badge
       const decisionEl = document.getElementById("decision");
       decisionEl.textContent = isBuild ? "✅ BUILD" : "❌ DON'T BUILD";
       decisionEl.className   = "badge " + (isBuild ? "tag-build" : "tag-nobuild");
 
-      // 3-year average GHI
       document.getElementById("avg-ghi").textContent = data.average_3_year + " W/m²";
 
-      // Threshold note
       document.getElementById("threshold-note").textContent =
         `Build threshold: ${data.threshold} W/m²  ·  3-year average: ${data.average_3_year} W/m²`;
 
-      // Yearly breakdown table
       const tbody = document.getElementById("yearly-tbody");
       tbody.innerHTML = "";
 
@@ -208,7 +194,6 @@
         }
       }
 
-      // Missing features warning (upload only)
       const warningEl = document.getElementById("missing-warning");
       if (data.missing_features && data.missing_features.length > 0) {
         warningEl.textContent =
@@ -244,7 +229,6 @@
         <a href="index.html">Home</a>
         <a href="cities.html">Cities</a>
         <a href="guide.html">Data Guide</a>
-        <a href="upload.html">Upload</a>
         <a class="active" href="result.html">Result</a>
         <a href="about.html">About</a>
         <button class="btn-logout" onclick="logout()">Logout</button>
