@@ -1,46 +1,19 @@
 const BACKEND_URL = "https://dcai-backend.onrender.com";
 
-// Optional quick test function
-async function getPrediction(cityName) {
-  try {
-    const token = localStorage.getItem("access_token");
-
-    const response = await fetch(`${BACKEND_URL}/predict/${encodeURIComponent(cityName)}`, {
-      method: "GET",
-      headers: token ? { Authorization: `Bearer ${token}` } : {}
-    });
-
-    if (!response.ok) {
-      throw new Error(`Request failed: ${response.status}`);
-    }
-
-    const data = await response.json();
-    console.log("Backend response:", data);
-
-    const resultEl = document.getElementById("result");
-    if (resultEl) {
-      resultEl.innerText = JSON.stringify(data, null, 2);
-    }
-  } catch (error) {
-    console.error("Error:", error);
-
-    const resultEl = document.getElementById("result");
-    if (resultEl) {
-      resultEl.innerText = "Failed to connect to backend";
-    }
-  }
-}
-
-// Load supported cities from backend
+// Load supported cities from backend + set up file input listener
 async function initPage() {
+  // Redirect to login if no token
+  if (!localStorage.getItem("token")) {
+    window.location.href = "login.html";
+    return;
+  }
+
   const dropdown = document.getElementById("city-dropdown");
 
   if (dropdown) {
     try {
       const response = await fetch(`${BACKEND_URL}/cities`);
       const data = await response.json();
-
-      console.log("Supported cities:", data);
 
       const supportedCities = data.supported_cities || [];
 
@@ -49,16 +22,16 @@ async function initPage() {
       supportedCities.forEach(city => {
         const option = document.createElement("option");
         option.value = city;
-        option.textContent = city;
+        option.textContent = city.replace(/_/g, " "); // "Los_Angeles" → "Los Angeles"
         dropdown.appendChild(option);
       });
+
     } catch (error) {
-      console.error("Failed to load cities:", error);
-      alert("Could not load supported cities from server.");
+      showError("Could not load cities. Check your connection.");
     }
   }
 
-  // Update file name text when a user selects a file
+  // Update file name display when user picks a file
   const fileInput = document.getElementById("file-input");
   const fileNameDisplay = document.getElementById("file-name");
 
@@ -72,103 +45,143 @@ async function initPage() {
   }
 }
 
-// Analyze pre-trained cities
+// Analyze pre-trained city
 async function handleCitySelect() {
   const dropdown = document.getElementById("city-dropdown");
   const selectedCity = dropdown ? dropdown.value : "";
-  const token = localStorage.getItem("access_token");
+  const token = localStorage.getItem("token"); // ← consistent key
+
+  clearError();
 
   if (!selectedCity) {
-    alert("Please select a city!");
+    showError("Please select a city.");
     return;
   }
 
   if (!token) {
-    alert("Please login first!");
+    window.location.href = "login.html";
     return;
   }
 
-  document.body.style.cursor = "wait";
+  setLoading(true, "city");
 
   try {
     const response = await fetch(`${BACKEND_URL}/predict/${encodeURIComponent(selectedCity)}`, {
       method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
+      headers: { Authorization: `Bearer ${token}` }
     });
 
-    const data = await response.json();
-
-    if (!response.ok || data.detail) {
-      console.error("Server error:", data);
-      alert(data.detail || "Prediction request failed.");
+    // Token expired or invalid
+    if (response.status === 401) {
+      localStorage.removeItem("token");
+      window.location.href = "login.html";
       return;
     }
 
-    console.log("City prediction response:", data);
+    const data = await response.json();
 
-    localStorage.setItem("lastPrediction", JSON.stringify(data));
-    localStorage.setItem("selectedCity", selectedCity);
+    if (!response.ok) {
+      showError(data.detail || "Prediction failed. Please try again.");
+      return;
+    }
 
+    // Save result and go to result page
+    sessionStorage.setItem("result", JSON.stringify(data));
     window.location.href = "result.html";
+
   } catch (err) {
-    console.error("Connection error:", err);
-    alert("Error connecting to server.");
+    showError("Could not connect to server. Please try again.");
   } finally {
-    document.body.style.cursor = "default";
+    setLoading(false, "city");
   }
 }
 
 // Analyze uploaded CSV files
 async function handleUploadAndAnalyze() {
   const fileInput = document.getElementById("file-input");
-  const file = fileInput ? fileInput.files[0] : null;
-  const token = localStorage.getItem("access_token");
+  const files = fileInput ? fileInput.files : [];
+  const token = localStorage.getItem("token"); // ← consistent key
 
-  if (!file) {
-    alert("Please select a CSV file first!");
+  clearError();
+
+  if (!files || files.length === 0) {
+    showError("Please select a CSV file first.");
     return;
   }
 
   if (!token) {
-    alert("Please login first!");
+    window.location.href = "login.html";
     return;
   }
 
-  document.body.style.cursor = "wait";
+  setLoading(true, "upload");
 
   const formData = new FormData();
-  formData.append("files", file);
+  for (let file of files) {
+    formData.append("files", file);
+  }
 
   try {
     const response = await fetch(`${BACKEND_URL}/predict/upload`, {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`
-      },
+      headers: { Authorization: `Bearer ${token}` },
+      // ⚠️ No Content-Type header — browser sets multipart boundary automatically
       body: formData
     });
 
-    const data = await response.json();
-
-    if (!response.ok || data.detail) {
-      console.error("Upload error:", data);
-      alert(data.detail || "Upload failed.");
+    // Token expired or invalid
+    if (response.status === 401) {
+      localStorage.removeItem("token");
+      window.location.href = "login.html";
       return;
     }
 
-    console.log("Upload prediction response:", data);
+    const data = await response.json();
 
-    localStorage.setItem("lastPrediction", JSON.stringify(data));
-    localStorage.setItem("selectedCity", "Upload: " + file.name);
+    if (!response.ok) {
+      showError(data.detail || "Upload failed. Please check your file.");
+      return;
+    }
 
+    // Save result and go to result page
+    sessionStorage.setItem("result", JSON.stringify(data));
     window.location.href = "result.html";
+
   } catch (err) {
-    console.error("Upload connection error:", err);
-    alert("Upload failed.");
+    showError("Upload failed. Could not connect to server.");
   } finally {
-    document.body.style.cursor = "default";
+    setLoading(false, "upload");
+  }
+}
+
+// ---- UI helpers ----
+function showError(msg) {
+  const el = document.getElementById("error-msg");
+  if (el) el.textContent = msg;
+}
+
+function clearError() {
+  const el = document.getElementById("error-msg");
+  if (el) el.textContent = "";
+}
+
+function setLoading(isLoading, type) {
+  document.body.style.cursor = isLoading ? "wait" : "default";
+
+  if (type === "city") {
+    const btn = document.getElementById("city-btn");
+    if (btn) {
+      btn.disabled = isLoading;
+      btn.textContent = isLoading ? "Analyzing..." : "Analyze City";
+    }
+  }
+
+  if (type === "upload") {
+    const btn = document.getElementById("upload-btn");
+    if (btn) {
+      btn.disabled = isLoading;
+      btn.textContent = isLoading ? "Analyzing..." : "Analyze";
+    }
   }
 }
 
