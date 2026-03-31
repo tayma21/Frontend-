@@ -21,8 +21,6 @@
   </style>
 </head>
 <body>
-
-  <!-- NAVBAR -->
   <nav class="nav">
     <div class="nav-inner">
       <a class="brand" href="index.html">Siting</a>
@@ -37,7 +35,6 @@
       </div>
     </div>
   </nav>
-
   <main class="hero-section">
     <div class="hero-content">
       <h1>Smart Data Center Siting</h1>
@@ -51,21 +48,17 @@
       <img src="homepic.jpg" alt="Data Center Illustration">
     </div>
   </main>
-
   <footer>
     <div class="container">
       <p>&copy; 2025 Smart Datacenter Siting, All rights reserved.</p>
     </div>
   </footer>
-
   <script>
-    // Show Logout if logged in, show Login if not
     window.addEventListener("DOMContentLoaded", () => {
       const token = localStorage.getItem("token");
-      document.getElementById("login-link").style.display  = token ? "none"  : "inline";
-      document.getElementById("logout-btn").style.display  = token ? "inline" : "none";
+      document.getElementById("login-link").style.display = token ? "none"   : "inline";
+      document.getElementById("logout-btn").style.display = token ? "inline" : "none";
     });
-
     function logout() {
       localStorage.removeItem("token");
       localStorage.removeItem("result");
@@ -73,6 +66,5 @@
       window.location.href = "login.html";
     }
   </script>
-
 </body>
 </html>
