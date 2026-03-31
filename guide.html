@@ -6,6 +6,22 @@
   
   <link rel="stylesheet" href="guidestyle.css">
   
+  <style>
+    .btn-logout {
+      background: transparent;
+      border: 1px solid #3ea174;
+      color: #3ea174;
+      padding: 6px 16px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+    .btn-logout:hover {
+      background: #3ea174;
+      color: white;
+    }
+  </style>
+
   <script>
     const ATTRS = [
       "Temperature","Alpha","Aerosol Optical Depth","Asymmetry","Clearsky DHI",
@@ -18,7 +34,6 @@
     function setCity(){
       const c = localStorage.selectedCity || "Your City";
       document.getElementById('cityName').textContent = c;
-      // Render list
       const ul = document.getElementById('attrList');
       ul.innerHTML = ATTRS.map(a=>`<li>${a}</li>`).join('');
     }
@@ -33,11 +48,18 @@
       URL.revokeObjectURL(a.href);
     }
 
+    function logout() {
+      localStorage.removeItem("token");
+      localStorage.removeItem("result");
+      sessionStorage.removeItem("result");
+      window.location.href = "login.html";
+    }
+
     window.addEventListener('DOMContentLoaded', setCity);
   </script>
 </head>
 <body>
-   <nav class="nav">
+  <nav class="nav">
     <div class="nav-inner">
       <a class="brand" href="index.html">Siting</a>
       
@@ -47,43 +69,50 @@
         <a class="active" href="guide.html">Data Guide</a>
         <a href="result.html">Result</a>
         <a href="about.html">About</a>
-        <a href="login.html">Login</a>
-        
+        <button class="btn-logout" onclick="logout()">Logout</button>
       </div>
     </div>
   </nav>
 
-<main class="guide-layout-container">
-  
-  <div class="guide-image-column">
-    <img src="C:\Users\pc\Desktop\capstone WEBSITE\guidepic2.jpg" alt="Data center guide visual">
-  </div>
-  
-  <div class="guide-content-column">
+  <main class="guide-layout-container">
     
-    <div class="card">
-      <div class="h2">Steps to get data for <span id="cityName">Your City</span></div>
-      <ol class="muted">
-        <li>Go to the <strong>NREL NSRDB</strong> (and/or Wind Toolkit) site and sign in.</li>
-        <li>Search your location; confirm the coordinates.</li>
-        <li>Select <span class="kbd">hourly</span> resolution and your target years.</li>
-        <li><strong>Check all the attributes below</strong> before exporting.</li>
-        <li>Export as CSV (UTF-8) with header row.</li>
-        <li>NOTE: If datasets were missing attributes, u will still get output but accuracy and decision will be affected. </li>
-      </ol>
+    <div class="guide-image-column">
+      <img src="guidepic2.jpg" alt="Data center guide visual">
+    </div>
+    
+    <div class="guide-content-column">
       
-      <div class="button-group">
-        <button class="btn" onclick="downloadTemplate()">Download CSV Template</button>
-        <a class="btn primary" href="upload.html">Go to Upload</a>
+      <div class="card">
+        <div class="h2">Steps to get data for <span id="cityName">Your City</span></div>
+        <ol class="muted">
+          <li>Go to the <strong>NREL NSRDB</strong> (and/or Wind Toolkit) site and sign in.</li>
+          <li>Search your location; confirm the coordinates.</li>
+          <li>Select <span class="kbd">hourly</span> resolution and your target years.</li>
+          <li><strong>Check all the attributes below</strong> before exporting.</li>
+          <li>Export as CSV (UTF-8) with header row.</li>
+          <li>NOTE: If datasets were missing attributes, you will still get output but accuracy and decision will be affected.</li>
+        </ol>
+        
+        <div class="button-group">
+          <button class="btn" onclick="downloadTemplate()">Download CSV Template</button>
+          <a class="btn primary" href="upload.html">Go to Upload</a>
+        </div>
       </div>
-    </div>
 
-    <div class="card">
-      <div class="h2">Required NREL Attributes (select all)</div>
-      <ul id="attrList" class="muted list-columns"></ul>
-      <p class="muted tip-text">Tip: After download, compare your CSV headers with the template or the list above.</p>
+      <div class="card">
+        <div class="h2">Required NREL Attributes (select all)</div>
+        <ul id="attrList" class="muted list-columns"></ul>
+        <p class="muted tip-text">Tip: After download, compare your CSV headers with the template or the list above.</p>
+      </div>
+
     </div>
-    
-  <footer><div class="container"><p>&copy; 2025 Smart Datacenter Siting , All rights reserved.</p></div></footer>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>&copy; 2025 Smart Datacenter Siting, All rights reserved.</p>
+    </div>
+  </footer>
+
 </body>
 </html>
