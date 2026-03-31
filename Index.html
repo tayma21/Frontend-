@@ -4,40 +4,75 @@
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Smart Datacenter Siting</title>
   <link rel="stylesheet" href="indexstyle.css">
+  <style>
+    .btn-logout {
+      background: transparent;
+      border: 1px solid #3ea174;
+      color: #3ea174;
+      padding: 6px 16px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+    .btn-logout:hover {
+      background: #3ea174;
+      color: white;
+    }
+  </style>
 </head>
 <body>
+
   <!-- NAVBAR -->
-   <nav class="nav">
+  <nav class="nav">
     <div class="nav-inner">
       <a class="brand" href="index.html">Siting</a>
       <div class="navlinks">
-        <a class ="active" href="index.html">Home</a>
+        <a class="active" href="index.html">Home</a>
         <a href="cities.html">Cities</a>
         <a href="guide.html">Data Guide</a>
         <a href="result.html">Result</a>
         <a href="about.html">About</a>
-        <a href="login.html">Login</a>
-        
+        <a href="login.html" id="login-link">Login</a>
+        <button class="btn-logout" id="logout-btn" style="display:none;" onclick="logout()">Logout</button>
       </div>
     </div>
   </nav>
 
   <main class="hero-section">
-  <div class="hero-content">
-    <h1>Smart Data Center Siting</h1>
-    <p>Choose a city, analyze renewable energy availability, and get a prediction on whether a data center should be built there.</p>
-    <div class="hero-buttons">
-      <a class="btn primary" href="cities.html">Select a City</a>
-      <a class="btn secondary" href="guide.html">Data Guide</a>
+    <div class="hero-content">
+      <h1>Smart Data Center Siting</h1>
+      <p>Choose a city, analyze renewable energy availability, and get a prediction on whether a data center should be built there.</p>
+      <div class="hero-buttons">
+        <a class="btn primary" href="cities.html">Select a City</a>
+        <a class="btn secondary" href="guide.html">Data Guide</a>
+      </div>
     </div>
-  </div>
-  <div class="hero-image">
-    <img src="C:\Users\pc\Desktop\capstone WEBSITE\homepic.jpg" alt="Data Center Illustration">
-  </div>
-</main>
+    <div class="hero-image">
+      <img src="homepic.jpg" alt="Data Center Illustration">
+    </div>
+  </main>
 
+  <footer>
+    <div class="container">
+      <p>&copy; 2025 Smart Datacenter Siting, All rights reserved.</p>
+    </div>
+  </footer>
 
-  <footer><div class="container"><p>&copy; 2025 Smart Datacenter Siting , All rights reserved.</p></div></footer>
-  
+  <script>
+    // Show Logout if logged in, show Login if not
+    window.addEventListener("DOMContentLoaded", () => {
+      const token = localStorage.getItem("token");
+      document.getElementById("login-link").style.display  = token ? "none"  : "inline";
+      document.getElementById("logout-btn").style.display  = token ? "inline" : "none";
+    });
+
+    function logout() {
+      localStorage.removeItem("token");
+      localStorage.removeItem("result");
+      sessionStorage.removeItem("result");
+      window.location.href = "login.html";
+    }
+  </script>
+
 </body>
 </html>
