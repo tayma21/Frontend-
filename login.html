@@ -27,8 +27,6 @@
   </style>
 </head>
 <body>
-
-  <!-- NAVBAR -->
   <nav class="nav">
     <div class="nav-inner">
       <a class="brand" href="index.html">Siting</a>
@@ -42,60 +40,43 @@
       </div>
     </div>
   </nav>
-
   <div class="auth-card">
     <h2 style="color: white;">Welcome Back</h2>
     <input type="email" id="login-email" placeholder="Email">
     <input type="password" id="login-pass" placeholder="Password">
-
     <p id="error-msg" class="error-msg"></p>
-
     <button class="btn primary" onclick="handleLogin()" id="login-btn">Login</button>
     <p class="muted" style="margin-top: 20px;">
       New here? <a href="signup.html" style="color: #3ea174;">Create account</a>
     </p>
   </div>
-
   <script>
     const API_BASE = "https://dcai-backend.onrender.com";
-
     async function handleLogin() {
-      const email   = document.getElementById("login-email").value.trim();
+      const email    = document.getElementById("login-email").value.trim();
       const password = document.getElementById("login-pass").value;
-      const btn     = document.getElementById("login-btn");
-      const errorEl = document.getElementById("error-msg");
-
-      // Clear previous error
+      const btn      = document.getElementById("login-btn");
+      const errorEl  = document.getElementById("error-msg");
       errorEl.textContent = "";
-
-      // Basic validation
       if (!email || !password) {
         errorEl.textContent = "Please fill in all fields.";
         return;
       }
-
-      // Loading state
       btn.disabled    = true;
       btn.textContent = "Authenticating...";
-
       try {
         const response = await fetch(`${API_BASE}/auth/login`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email, password })
         });
-
         const data = await response.json();
-
         if (response.ok) {
-          // Save token — using "token" as the key consistently across all pages
           localStorage.setItem("token", data.access_token);
           window.location.href = "cities.html";
         } else {
-          // Show exact error from backend (e.g. "Invalid email or password")
           errorEl.textContent = data.detail || "Invalid email or password.";
         }
-
       } catch (err) {
         errorEl.textContent = "Server is warming up. Wait a moment and try again!";
       } finally {
@@ -104,6 +85,5 @@
       }
     }
   </script>
-
 </body>
 </html>
