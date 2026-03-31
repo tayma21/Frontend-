@@ -52,8 +52,8 @@
       text-align: center;
     }
 
-    .tag-build    { background-color: #3ea174 !important; }
-    .tag-nobuild  { background-color: #e05252 !important; }
+    .tag-build   { background-color: #3ea174 !important; }
+    .tag-nobuild { background-color: #e05252 !important; }
 
     .result-page .decision-confidence-group p {
       font-size: 1.2rem;
@@ -71,7 +71,6 @@
       font-weight: 700;
     }
 
-    /* Yearly breakdown table */
     .yearly-table {
       width: 100%;
       border-collapse: collapse;
@@ -94,14 +93,12 @@
     .status-above { color: #3ea174; font-weight: bold; }
     .status-below { color: #e05252; font-weight: bold; }
 
-    /* Threshold note */
     .threshold-note {
       font-size: 0.95rem;
       color: #555 !important;
       margin-bottom: 30px !important;
     }
 
-    /* Missing features warning */
     .warning-box {
       background: #fff8e1;
       border: 1px solid #f0c040;
@@ -135,65 +132,64 @@
       color: white !important;
       transform: translateY(-2px);
     }
+
+    /* Logout button in navbar */
+    .btn-logout {
+      background: transparent;
+      border: 1px solid #3ea174;
+      color: #3ea174;
+      padding: 6px 16px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+    .btn-logout:hover {
+      background: #3ea174;
+      color: white;
+    }
   </style>
 
   <script>
     function loadResult() {
-      // Read from sessionStorage (set by citiesjava.js)
-      const raw = sessionStorage.getItem("result");
+      // Try sessionStorage first, fall back to localStorage (survives refresh)
+      let raw = sessionStorage.getItem("result");
 
       if (!raw) {
-        // No result — send back to cities
+        raw = localStorage.getItem("result");
+      }
+
+      if (!raw) {
+        // No result anywhere — send back to cities
         window.location.href = "cities.html";
         return;
       }
 
       const data = JSON.parse(raw);
 
-      /*
-        Data shape from backend:
-
-        City prediction:
-        {
-          city: "Phoenix",
-          yearly_avg: { "2025": 456.2, "2026": 461.0, "2027": 458.7 },
-          average_3_year: 458.6,
-          threshold: 409,
-          decision: "BUILD" or "DON'T BUILD"
-        }
-
-        File upload:
-        {
-          yearly_avg: { 2025: 420.1, 2026: 415.3, 2027: 418.9 },
-          average_3_year: 418.1,
-          threshold: 409,
-          decision: "BUILD" or "DON'T BUILD",
-          files_uploaded: 3,
-          months_of_data: 36,
-          missing_features: []
-        }
-      */
+      // Save to both so refresh always works
+      sessionStorage.setItem("result", raw);
+      localStorage.setItem("result", raw);
 
       const isBuild = data.decision === "BUILD";
 
-      // ---- City name ----
+      // City name
       document.getElementById("city").textContent = data.city
         ? data.city.replace(/_/g, " ")
         : "Your Upload";
 
-      // ---- Decision badge ----
+      // Decision badge
       const decisionEl = document.getElementById("decision");
       decisionEl.textContent = isBuild ? "✅ BUILD" : "❌ DON'T BUILD";
       decisionEl.className   = "badge " + (isBuild ? "tag-build" : "tag-nobuild");
 
-      // ---- 3-year average GHI ----
+      // 3-year average GHI
       document.getElementById("avg-ghi").textContent = data.average_3_year + " W/m²";
 
-      // ---- Threshold note ----
+      // Threshold note
       document.getElementById("threshold-note").textContent =
         `Build threshold: ${data.threshold} W/m²  ·  3-year average: ${data.average_3_year} W/m²`;
 
-      // ---- Yearly breakdown table ----
+      // Yearly breakdown table
       const tbody = document.getElementById("yearly-tbody");
       tbody.innerHTML = "";
 
@@ -212,7 +208,7 @@
         }
       }
 
-      // ---- Missing features warning (upload only) ----
+      // Missing features warning (upload only)
       const warningEl = document.getElementById("missing-warning");
       if (data.missing_features && data.missing_features.length > 0) {
         warningEl.textContent =
@@ -220,6 +216,19 @@
           data.missing_features.join(", ");
         warningEl.style.display = "block";
       }
+    }
+
+    function newAnalysis() {
+      sessionStorage.removeItem("result");
+      localStorage.removeItem("result");
+      window.location.href = "cities.html";
+    }
+
+    function logout() {
+      localStorage.removeItem("token");
+      localStorage.removeItem("result");
+      sessionStorage.removeItem("result");
+      window.location.href = "login.html";
     }
 
     window.addEventListener("DOMContentLoaded", loadResult);
@@ -238,6 +247,7 @@
         <a href="upload.html">Upload</a>
         <a class="active" href="result.html">Result</a>
         <a href="about.html">About</a>
+        <button class="btn-logout" onclick="logout()">Logout</button>
       </div>
     </div>
   </nav>
@@ -247,19 +257,15 @@
 
       <div class="h2">Recommendation for <span id="city">Your City</span></div>
 
-      <!-- Decision + Average GHI -->
       <div class="decision-confidence-group">
         <span id="decision" class="badge">—</span>
         <p>3-Year Avg GHI: <span id="avg-ghi" class="badge">—</span></p>
       </div>
 
-      <!-- Threshold note -->
       <p id="threshold-note" class="threshold-note"></p>
 
-      <!-- Missing features warning (hidden unless upload has missing features) -->
       <div id="missing-warning" class="warning-box" style="display:none;"></div>
 
-      <!-- Yearly GHI breakdown -->
       <table class="yearly-table">
         <thead>
           <tr>
@@ -273,10 +279,9 @@
         </tbody>
       </table>
 
-      <!-- Action buttons -->
       <div class="button-group">
         <a class="btn" href="cities.html">Try Another City</a>
-        <a class="btn" href="cities.html" onclick="sessionStorage.removeItem('result')">New Analysis</a>
+        <button class="btn" onclick="newAnalysis()">New Analysis</button>
       </div>
 
     </div>
